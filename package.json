@@ -1,0 +1,13 @@
+{
+  "name": "images-aws",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "zip": "npm install && chmod -R +r node_modules && zip -r bundle.zip node_modules index.js"
+  },
+  "dependencies": {
+    "gm": "1.23.1",
+    "mktemp": "0.4.0"
+  }
+}
