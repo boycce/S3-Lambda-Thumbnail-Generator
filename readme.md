@@ -78,3 +78,13 @@ var settings = {
     ]
 }
 ```
+
+
+## UPDATE
+
+I wasn't able to select NodeJS 8.10 since it's no longer supported. 
+I selected 10x, but ImageMagick is no longer bundled in that version and I was getting an ImageMagick error.
+So I followed this workaround:
+https://stackoverflow.com/a/58881623
+It now works and generates thumbnails, but took me a while to figure out why it wasn't working again. 
+Turns out it was timing out after 3 seconds since it was the default timeout. :laughing:
