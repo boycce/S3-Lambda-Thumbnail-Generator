@@ -10,8 +10,8 @@ var settings = {
   filetypes: ['png', 'jpg', 'jpeg',  'bmp', 'tiff', 'gif'],
   // Thumbnail sizes (excluding 'full')
   sizes: [
-    { name: "small", width: null, height: 450 },
-    { name: "medium", width: null, height: 1000 },
+    { name: "small", width: null, height: 200 },
+    { name: "medium", width: null, height: 750 },
     { name: "large", width: null, height: 1600 }
   ]
 }
@@ -24,6 +24,12 @@ exports.handler = (event, context, callback) => {
   var key = decodeURIComponent(event.Records[0].s3.object.key).replace(/\+/g, ' ')
   var filename = key.replace(/^full\//, '')
   var fileType = (filename.match(/\.\w+$/)? filename.match(/\.\w+$/)[0] : '').substr(1).toLowerCase()
+
+  console.log('Filename:', filename)
+  console.log('File Type:', fileType)
+  console.log('Key:', key)
+  console.log('Bucket:', bucket)
+  console.log('Settings:', settings)
 
   // Catch resizing timeouts here so aws doesn't restart the request 3 times,
   // make this number 1 second less than the lambda timeout
@@ -49,9 +55,9 @@ exports.handler = (event, context, callback) => {
       data = tempFile + "[0]"
     }
 
-    Promise.all(settings.sizes.map((size, i) => {
+    Promise.all(settings.sizes.map((size) => {
       return new Promise((resolve, reject) => {
-        gm(data).size(function(err, curSize) {
+        gm(data).size({ bufferStream: true }, function(err, curSize) {
           if (err) return reject('Size error:' + err)
           var height = curSize.height > size.height? size.height : curSize.height
           /*
@@ -59,8 +65,18 @@ exports.handler = (event, context, callback) => {
             * If the image is smaller than the the targeted height, keep the original image
             * height and just convert to jpg for the thumbnail's display
             */
+
+          console.log('Size: ', size.width, 'Height:', height)
+
           this.resize(size.width, height).toBuffer("jpg", (err, buffer) => {
+            console.log('Error this.resize:', err)
+            console.log('Bucket:', bucket)
+            console.log('Buffer:', buffer)
+
             if (err) return reject(`Unable to generate images for '${bucket}/${filename}', error: ` + err)
+
+            console.log('Key:', size.name + '/' + filename.replace(/\.\w+$/, ".jpg"))
+
             s3.putObject({
               Bucket: bucket,
               Key: size.name + '/' + filename.replace(/\.\w+$/, ".jpg"),
@@ -68,7 +84,15 @@ exports.handler = (event, context, callback) => {
               ContentType: "image/jpg",
               ACL: 'public-read',
               Metadata: { thumbnail: 'TRUE' }
-            }, (err) => (err? reject(err) : resolve()))
+            }, (err) => {
+              console.log('Error putObject:', err)
+
+              if (err) {
+                reject(err)
+              } else {
+                resolve()
+              }
+            })
           })
         })
       })
@@ -83,6 +107,8 @@ exports.handler = (event, context, callback) => {
       callback()
 
     }).catch(err => {
+      console.log('Error:', err)
+
       error(err)
     })
   })
