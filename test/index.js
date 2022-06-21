@@ -56,11 +56,7 @@ async function start() {
               'key': encodeURIComponent(res1.key),
               'size': res2.ContentLength,
               'eTag': res1.ETag,
-              'sequencer': '0A1B2C3D4E5F678901',
-              ...Object.keys(res2.Metadata||{}).reduce((acc, key) => {
-                acc[`x-amz-meta-${key}`] = res2.Metadata[key]
-                return acc
-              }, {}),
+              'sequencer': '0A1B2C3D4E5F678901'
             }
           }
         }

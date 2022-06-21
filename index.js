@@ -23,13 +23,12 @@ exports.handler = async (event, context) => {
     let key = decodeURIComponent(event.Records[0].s3.object.key).replace(/\+/g, ' ')
     let filename = key.replace(/^full\//, '')
     let fileType = (filename.match(/\.\w+$/)? filename.match(/\.\w+$/)[0] : '').substr(1).toLowerCase()
-    let sizes = getSizes(event.Records[0].s3.object) || settings.sizes
-    console.log({ filename, fileType, key, bucket, sizes })
+    console.log({ filename, fileType, key, bucket })
 
     // This is required since we cancel long running executings via the timeout
     context.callbackWaitsForEmptyEventLoop = false
 
-    if (!key.match(/^full\//)) {
+    if (!key.match(/^full\//)) { // protect against recursion
       throw new Error(`Skipping put to ${filename}`)
 
     } else if (fileType === '') {
@@ -37,9 +36,6 @@ exports.handler = async (event, context) => {
 
     } else if (settings.filetypes.indexOf(fileType) === -1) {
       throw new Error(`Filetype ${fileType} isn't a valid file for resizing.`)
-
-    } else if (sizes.find(o => !o.name || o.name == 'full')) { // protect against recursion
-      throw new Error(`Invalid size name in [${sizes.map(o => o.name).join(',')}].`)
     }
 
     // Get the image and acl
@@ -47,6 +43,10 @@ exports.handler = async (event, context) => {
       s3.getObject({ Bucket: bucket, Key: key, }).promise(),
       s3.getObjectAcl({ Bucket: bucket, Key: key, }).promise(),
     ])
+
+    // Try to get any sizes set in the metadata
+    let sizes = getSizes(image.Metadata) || settings.sizes
+    console.log({ sizes })
 
     // Removing animation? (forgot what this was for)
     if (fileType === 'gif') {
@@ -107,11 +107,11 @@ exports.handler = async (event, context) => {
 function getSizes(object) {
   let sizes = []
   for (let key in object) {
-    if (key.match(/^x-amz-meta-(small|medium|large)$/)) {
+    if (key.match(/^small|medium|large$/)) {
       let width = object[key].split('x')[0]
       let height = object[key].split('x')[1]
       sizes.push({
-        name: key.match(/(small|medium|large)$/)[1],
+        name: key,
         width: width == '*' ? null : parseInt(width),
         height: height == '*' ? null : parseInt(height),
       })

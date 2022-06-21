@@ -42,11 +42,9 @@ An Amazon Web Services Lambda function that generates thumbnails for images uplo
 
 You can override the default settings per file by adding the following file metadata (which is easily defined via [monastery options](https://boycce.github.io/monastery/image-plugin.html)). Note that if you define only one size, the other two default sizes will be skipped. `*` = `null`, i.e. any size.
 ```
-{
-  'x-amz-meta-small': '*x300',
-  'x-amz-meta-medium': '*x800',
-  'x-amz-meta-large': '*x1400',
-}
+x-amz-meta-small = *x300
+x-amz-meta-medium = *x800
+x-amz-meta-large = *x1400
 ```
 
 ## Default Settings
