@@ -1,4 +1,5 @@
 # Application files
+.env
 node_modules
 
 # Thumbnail and view configuration files

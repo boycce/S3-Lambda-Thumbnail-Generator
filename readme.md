@@ -1,59 +1,122 @@
-# S3-lambda-thumbnail-generator
+# S3 Lambda Thumbnail Generator
 
-## Usage
-An Amazon Web Services Lambda function that generates thumbnails from images uploaded to AWS S3.
+An Amazon Web Services Lambda function that generates thumbnails for images uploaded to s3 under `full/`, any predefined ACLs are also maintained.
 
-Example:
-* **Event**: Uploading an image to S3 (a.k.a S3 PUT)
-* **Function**: Generate thumbnail for the uploaded image and place it in a thumbnail folder
-
-## Install Bucket
+## Setup S3 Bucket
 
 1. Create a S3 bucket
-1. Create an IAM user, e.g. `Corex` (you'll be writting to this bucket via the user's API credentials)
-2. Create an IAM policy, e.g. `CorexBucketsOnly`, and attach the user to this policy. [See policy example below](#s3-bucket-policy-example)
+1. Create an IAM user, e.g. `MyProject` (you'll be writting to this bucket via the user's API credentials)
+2. Create an IAM policy, e.g. `MyProjectBucketsOnly`, and attach the user to this policy. [See policy example below](#s3-bucket-policy-example)
 
-## Install Lambda
+## Setup Function
 
-1. Log in to your AWS account
-2. Click on **Lambda** from the list of the available services
-3. Click on **Get Started**
-4. From the left menu choose **Configure triggers**
-    - Choose **S3** from the list of available events/services
-    - Make sure you choose the appropriate **Bucket** name
-    - Choose **Put** for event type
-    - (optional) Type in a prefix path for images to trigger events for
-    - (optional) Choose what type of files to handle (png, jpg, etc..)
-    - Enable trigger and click **Next**
-5. Configuring function
-    * Give your function any name you want, add an optional description, and choose **Node.js 8.10** as your runtime
-    * Upload **Thumbnailer.zip** as is
-    * Create a new **role**, give it a name, and attach to it **S3 object read-only permission** policy
-    * Hit **Next** then **Create function**, and you're good to go!
-6. *Wahoo, Once you upload an image to your S3 bucket, an event will be triggered and your image will have a thumbnail automatically generated for it in a thumbnail folder.*
+1. Log in to your AWS account, and goto Lambda
+2. Click "Create function"
+    - Click "Author from scratch"
+    - Add function name, e.g. "MyProjectThumbnailGenerator"
+    - Select the correct runtime, see package.json
+    - Select "Create a new role with basic Lambda permissions"
+    - Hit "Create function"
+3. Click "Function overview" > "Add trigger"
+    - Select **S3** trigger
+    - Choose your bucket
+    - Choose **PUT** for the event type (and **CompleteMultipartUpload** depending on your requirements)
+    - Choose what prefix-path triggers the function, i.e. full/
+    - (optional) Choose what filetypes triggers the function, e.g. .png
+    - Hit "Add"
+4. Click "Add a layer" (bottom of page)
+    - Click "Specify an ARN"
+    - (Once per account) open [`image-magick-lambda-layer`](https://serverlessrepo.aws.amazon.com/applications/us-east-1/145266761615/image-magick-lambda-layer) (2019-05-17) in a new tab, and click deploy. Or create a new layer manually by using `./image-magick-lambda-layer.zip` (2019-11-15)
+    - Open "Lambda" > "Layers" on another tab, and copy your "image magick" layer ARN
+    - Now paste in your layer ARN, e.g. "arn:aws:lambda:ap-southeast-2:349844946466:layer:graphicMagickLayer:1"
+    - Hit "Add"
+5. Click "Configuration" > "General configuration" > "Edit"
+    - Set timeout to 1 min
+5. Click "Configuration" > "Permissions" > "Role" (MyProjectThumbnailGenerator)
+    - Click "Attach Policies"
+    - Search for your s3 bucket policy, e.g. MyProjectBucketsOnly
+    - Hit "Attach Policies"
+6. Done
 
-## Customization
+## Image Settings
 
-You can customise the setting defaults in `index.js`
+You can override the default settings per file by adding the following file metadata (which is easily defined via [monastery options](https://boycce.github.io/monastery/image-plugin.html)). Note that if you define only one size, the other two default sizes will be skipped. `*` = `null`, i.e. any size.
+```
+{
+  'x-amz-meta-small': '*x300',
+  'x-amz-meta-medium': '*x800',
+  'x-amz-meta-large': '*x1400',
+}
+```
 
-After modifying this file, you **MUST** compress it with **node_modules** folder and upload it again to Lambda.
-If you receive "module not found" errors in the console, this is probably due the zip file having
-the incorrect permissions set before zipping. (linux: you cannot use a umask'd ntfs partition)
+## Default Settings
 
+You easily can customise the setting defaults in `index.js` on Lambda
 ```js
 var settings = {
   // Allowed filetypes
   filetypes: ['png', 'jpg', 'jpeg',  'bmp', 'tiff', 'gif'],
   // Thumbnail sizes (excluding 'full')
   sizes: [
-    { name: "small", width: null, height: 450 },
-    { name: "medium", width: null, height: 1000 },
-    { name: "large", width: null, height: 1600 }
+    { name: "small", width: null, height: 300 },
+    { name: "medium", width: null, height: 800 },
+    { name: "large", width: null, height: 1400 },
   ]
 }
 ```
 
-## S3 Bucket policy example
+## Lambda Testing
+
+To test this function, you can create a new Lambda test event with the following JSON object. Replace `{YOUR-BUCKET}`
+ with your bucket name and upload `./test/test.jpg` to `{YOUR-BUCKET}/full/test.jpg`.
+
+```json
+{
+  "Records": [
+    {
+      "eventVersion": "2.0",
+      "eventSource": "aws:s3",
+      "awsRegion": "us-east-1",
+      "eventTime": "1970-01-01T00:00:00.000Z",
+      "eventName": "ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "EXAMPLE"
+      },
+      "requestParameters": {
+        "sourceIPAddress": "127.0.0.1"
+      },
+      "responseElements": {
+        "x-amz-request-id": "EXAMPLE123456789",
+        "x-amz-id-2": "EXAMPLE123/5678abcdefghijklambdaisawesome/mnopqrstuvwxyzABCDEFGH"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "testConfigRule",
+        "bucket": {
+          "name": "{YOUR-BUCKET}",
+          "ownerIdentity": {
+            "principalId": "EXAMPLE"
+          },
+          "arn": "arn:aws:s3:::{YOUR-BUCKET}"
+        },
+        "object": {
+          "key": "full/test.jpg",
+          "size": 483813,
+          "eTag": "0123456789abcdef0123456789abcdef"
+        }
+      }
+    }
+  ]
+}
+```
+
+## Building
+
+You can run `npm run zip` to re-generate the compressed file
+
+If you are receiving "module not found" errors in the lambda console, this is probably due the zip file having the incorrect permissions set before zipping. (linux: you cannot use a umask'd ntfs partition)
+
+## S3 Bucket Policy Example
 ```json
 {
     "Version": "2012-10-17",
@@ -67,24 +130,14 @@ var settings = {
             "Action": "s3:*",
             "Effect": "Allow",
             "Resource": [
-                "arn:aws:s3:::corex-dev",
-                "arn:aws:s3:::corex-dev/*",
-                "arn:aws:s3:::corex-staging",
-                "arn:aws:s3:::corex-staging/*",
-                "arn:aws:s3:::corex-prod",
-                "arn:aws:s3:::corex-prod/*"
+                "arn:aws:s3:::my-project-dev",
+                "arn:aws:s3:::my-project-dev/*",
+                "arn:aws:s3:::my-project-staging",
+                "arn:aws:s3:::my-project-staging/*",
+                "arn:aws:s3:::my-project-prod",
+                "arn:aws:s3:::my-project-prod/*"
             ]
         }
     ]
 }
 ```
-
-
-## UPDATE
-
-I wasn't able to select NodeJS 8.10 since it's no longer supported. 
-I selected 10x, but ImageMagick is no longer bundled in that version and I was getting an ImageMagick error.
-So I followed this workaround:
-https://stackoverflow.com/a/58881623
-It now works and generates thumbnails, but took me a while to figure out why it wasn't working again. 
-Turns out it was timing out after 3 seconds since it was the default timeout. :laughing:

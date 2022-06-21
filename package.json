@@ -3,18 +3,21 @@
   "description": "Generate thumbnails automatically for uploaded s3 images",
   "repository": "github:boycce/s3-lambda-thumbnail-generator",
   "author": "Ricky Boyce",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "zip": "rm -r node_modules && npm i --omit=dev --only=prod && chmod -R +r node_modules && zip -r bundle.zip node_modules index.js package.json"
+    "test": "node ./test/index.js",
+    "zip": "rm -r node_modules && npm i --omit=dev --only=prod && chmod -R +r node_modules && zip -r bundle.zip node_modules index.js package.json && npm i"
   },
   "dependencies": {
     "gm": "1.23.1",
     "mktemp": "0.4.0"
   },
   "devDependencies": {
+    "aws-sdk": "^2.1156.0",
     "babel-eslint": "^10.0.3",
+    "dotenv": "^8.2.0",
     "eslint": "^6.8.0"
   },
   "engines": {
