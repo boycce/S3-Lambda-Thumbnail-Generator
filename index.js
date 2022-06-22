@@ -9,7 +9,7 @@ let settings = {
   sizes: [ // Default thumbnail sizes
     { name: 'small', width: null, height: 300 },
     { name: 'medium', width: null, height: 800 },
-    { name: 'large', width: null, height: 1400 },
+    { name: 'large', width: null, height: 1200 },
   ],
 }
 

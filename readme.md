@@ -44,7 +44,7 @@ You can override the default settings per file by adding the following file user
 ```
 x-amz-meta-small = *x300
 x-amz-meta-medium = *x800
-x-amz-meta-large = *x1400
+x-amz-meta-large = *x1200
 ```
 
 ## Default Settings
@@ -58,7 +58,7 @@ var settings = {
   sizes: [
     { name: "small", width: null, height: 300 },
     { name: "medium", width: null, height: 800 },
-    { name: "large", width: null, height: 1400 },
+    { name: "large", width: null, height: 1200 },
   ]
 }
 ```

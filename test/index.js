@@ -14,7 +14,7 @@ async function start() {
       Bucket: process.env.awsBucket,
       Key: 'full/test.jpg',
       Body: fs.readFileSync('./test/test.jpg'),
-      Metadata: { small: '*x100', medium: '*x750', large: '*x1600' }, // not used in test
+      Metadata: { small: '*x150', medium: '*x400', large: '*x600' }, // not used in test
     }).promise()
 
     let res2 = await s3.getObject({
