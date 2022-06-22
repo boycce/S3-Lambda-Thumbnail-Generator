@@ -28,7 +28,7 @@ An Amazon Web Services Lambda function that generates thumbnails for images uplo
     - Click "Specify an ARN"
     - (Once per account) open [`image-magick-lambda-layer`](https://serverlessrepo.aws.amazon.com/applications/us-east-1/145266761615/image-magick-lambda-layer) (2019-05-17) in a new tab, and click deploy. Or create a new layer manually by using `./image-magick-lambda-layer.zip` (2019-11-15)
     - Open "Lambda" > "Layers" on another tab, and copy your "image magick" layer ARN
-    - Now paste in your layer ARN, e.g. "arn:aws:lambda:ap-southeast-2:349844946466:layer:graphicMagickLayer:1"
+    - Now paste in your layer ARN, e.g. "arn:aws:lambda:ap-southeast-2:349844946466:layer:image-magick-custom:3"
     - Hit "Add"
 5. Click "Configuration" > "General configuration" > "Edit"
     - Set timeout to 1 min
