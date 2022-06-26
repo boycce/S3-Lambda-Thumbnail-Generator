@@ -31,7 +31,8 @@ An Amazon Web Services Lambda function that generates thumbnails for images uplo
     - Now paste in your layer ARN, e.g. "arn:aws:lambda:ap-southeast-2:349844946466:layer:image-magick-custom:3"
     - Hit "Add"
 5. Click "Configuration" > "General configuration" > "Edit"
-    - Set timeout to 1 min
+    - Set timeout to 30 sec
+    - Set memory to 512MB (see [lambda memory](#lambda-memory))
 5. Click "Configuration" > "Permissions" > "Role" (MyProjectThumbnailGenerator)
     - Click "Add Permissions" > "Attach Policies"
     - Search for your s3 bucket policy, e.g. MyProjectBucketsOnly
@@ -107,6 +108,11 @@ To test this function, you can create a new Lambda test event with the following
   ]
 }
 ```
+
+## Lambda Memory
+
+  - Trying to upload 1MB (2560x1440) images on 128mb lambda instances fail. Increasing the memory to 256MB fixes this.
+  - Trying to upload 3.7MB (3626x4532) images on 256mb lambda instances fail. Increasing the memory to 512MB fixes this.
 
 ## Building
 

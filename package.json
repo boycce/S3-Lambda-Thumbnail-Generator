@@ -6,6 +6,7 @@
   "version": "1.1.0",
   "main": "index.js",
   "scripts": {
+    "resize": "node ./test/resize.js",
     "start": "node index.js",
     "test": "node ./test/index.js",
     "zip": "rm -r node_modules && npm i --omit=dev --only=prod && chmod -R +r node_modules && zip -r bundle.zip node_modules index.js package.json && npm i"

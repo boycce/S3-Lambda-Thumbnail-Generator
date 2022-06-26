@@ -1,4 +1,5 @@
 # Application files
+resources
 .env
 node_modules
 

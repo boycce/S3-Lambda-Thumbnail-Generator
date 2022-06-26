@@ -12,14 +12,14 @@ async function start() {
     let res1 = await s3.upload({
       ACL: 'public-read',
       Bucket: process.env.awsBucket,
-      Key: 'full/test.jpg',
-      Body: fs.readFileSync('./test/test.jpg'),
+      Key: 'full/test1.jpg',
+      Body: fs.readFileSync('./test/test1.jpg'),
       Metadata: { small: '*x150', medium: '*x400', large: '*x600' }, // not used in test
     }).promise()
 
     let res2 = await s3.getObject({
       Bucket: process.env.awsBucket,
-      Key: 'full/test.jpg',
+      Key: 'full/test1.jpg',
     }).promise()
     // console.log(res1, res2)
 

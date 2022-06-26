@@ -16,17 +16,15 @@ let settings = {
 exports.handler = async (event, context) => {
   /**
     @param {object} event - see test/index.js
+    @param {object} event.Records[0].s3.object.key - filename always encoded, but not the dir
   */
-  let processing = true
   try {
     let bucket = event.Records[0].s3.bucket.name
+    let keyIn = event.Records[0].s3.object.key
     let key = decodeURIComponent(event.Records[0].s3.object.key).replace(/\+/g, ' ')
     let filename = key.replace(/^full\//, '')
     let fileType = (filename.match(/\.\w+$/)? filename.match(/\.\w+$/)[0] : '').substr(1).toLowerCase()
-    console.log({ filename, fileType, key, bucket })
-
-    // This is required since we cancel long running executings via the timeout
-    context.callbackWaitsForEmptyEventLoop = false
+    console.log({ filename, fileType, keyIn, key, bucket })
 
     if (!key.match(/^full\//)) { // protect against recursion
       throw new Error(`Skipping put to ${filename}`)
@@ -56,49 +54,18 @@ exports.handler = async (event, context) => {
     }
 
     // Loop sizes
-    await Promise.all(sizes.map(size => {
-      return new Promise((resolve, reject) => {
-        gm(image.Body).size({ bufferStream: true }, function(err, curSize) {
-          if (err) return reject('Size error:' + err)
-          // Resizing is the time expensive part..
-          // If the image is smaller than the the targeted height, keep the original image
-          // height and just convert to jpg for the thumbnail's display
-          let height = curSize.height > size.height ? size.height : curSize.height
-          this.resize(size.width, height).toBuffer('jpg', async (err, buffer) => {
-            if (err) return reject(`Unable to generate images for '${bucket}/${filename}', error: ` + err)
-            try {
-              // Save the image, and upadate its ACL
-              await s3.putObject({
-                Bucket: bucket,
-                Key: size.name + '/' + filename.replace(/\.\w+$/, '.jpg'),
-                Body: buffer,
-                ContentType: 'image/jpg',
-                Metadata: { thumbnail: 'TRUE' }
-              }).promise()
-              await s3.putObjectAcl({
-                Bucket: bucket,
-                Key: size.name + '/' + filename.replace(/\.\w+$/, '.jpg'),
-                AccessControlPolicy: imageAcl,
-              }).promise()
-              resolve()
-            } catch (err) {
-              reject(err)
-            }
-          })
-        })
-      })
-    }))
+    // Note: running below in parallel can throw the error "Stream yields empty buffer" for
+    // big images due to memory accumulation. Please refer the readme.md for more information.
+    for (const size of sizes) {
+      await resize(size, image, imageAcl, bucket, filename)
+    }
 
     // Ignore logging after this function has ended, caused by callbackWaitsForEmptyEventLoop
-    if (!processing) return
-    else processing = false
     if (tempFile) fs.unlinkSync(tempFile)
     console.log(`Created new images for '${bucket}/${filename}'`)
 
   } catch (err) {
     // Ignore logging after this function has ended, caused by callbackWaitsForEmptyEventLoop
-    if (!processing) return
-    else processing = false
     if (tempFile) fs.unlinkSync(tempFile)
     console.error(err)
   }
@@ -118,4 +85,51 @@ function getSizes(object) {
     }
   }
   return sizes.length ? sizes : null
+}
+
+function resize(size, image, imageAcl, bucket, filename) {
+  return new Promise((resolve, reject) => {
+    gm(image.Body).size({ bufferStream: true }, function(err, curSize) {
+      if (err) return reject('Size error:' + err)
+      // Resizing is the time expensive part..
+      // If the image is smaller than the the targeted height, keep the original image
+      // height and just convert to jpg for the thumbnail's display
+      let height = curSize.height > size.height ? size.height : curSize.height
+      this.resize(size.width, height).toBuffer('jpg', async (err, buffer) => {
+        if (err) return reject(`Unable to generate images for '${bucket}/${filename}', error: ` + err)
+        try {
+          // Save the image, and upadate its ACL
+          await s3.putObject({
+            Bucket: bucket,
+            Key: size.name + '/' + filename.replace(/\.\w+$/, '.jpg'),
+            Body: buffer,
+            ContentType: 'image/jpg',
+            Metadata: { thumbnail: 'TRUE' }
+          }).promise()
+          await s3.putObjectAcl({
+            Bucket: bucket,
+            Key: size.name + '/' + filename.replace(/\.\w+$/, '.jpg'),
+            AccessControlPolicy: imageAcl,
+          }).promise()
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
+      })
+    })
+  })
+}
+
+function getMemory() { // eslint-disable-line
+  /**
+   * Not used, doesn't affect anything..
+   * Typically we determine to us 90% of max memory size for ImageMagick
+   * @see https://docs.aws.amazon.com/lambda/latest/dg/lambda-environment-variables.html
+   * @see https://github.com/ysugimoto/aws-lambda-image/pull/192/commits/91fb1f0cdc1a808a91eadc84422ef632d041989b
+   * @see https://github.com/aheckmann/gm/issues/572
+   * @use `gm(...).limit('memory', getMemory()).size(...)`
+   * @see limit('map', ...)?
+   */
+  const mem = parseInt(process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE, 10)
+  return Math.floor(mem * 90 / 100)
 }
