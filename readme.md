@@ -17,6 +17,8 @@ An Amazon Web Services Lambda function that generates thumbnails for images uplo
     - Select the correct runtime, see package.json
     - Select "Create a new role with basic Lambda permissions"
     - Hit "Create function"
+    
+3. Click "Upload From" > and select `./bundle.zip`
 3. Click "Function overview" > "Add trigger"
     - Select **S3** trigger
     - Choose your bucket
