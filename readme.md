@@ -70,6 +70,8 @@ var settings = {
 
 To test this function, you can create a new Lambda test event with the following JSON object. Replace `{YOUR-BUCKET}`
  with your bucket name and upload `./test/test.jpg` to `{YOUR-BUCKET}/full/test.jpg`.
+ 
+If something is going wrong, you can dig into the CloudWatch logs ("Monitor" > "View CloudWatch Logs")
 
 ```json
 {
@@ -113,8 +115,17 @@ To test this function, you can create a new Lambda test event with the following
 
 ## Lambda Memory
 
-  - Trying to upload 1MB (2560x1440) images on 128mb lambda instances fail. Increasing the memory to 256MB fixes this.
-  - Trying to upload 3.7MB (3626x4532) images on 256mb lambda instances fail. Increasing the memory to 512MB fixes this.
+  If the lambda function doesn't have enough CPU power, large images take too long to process and store in memory, which fails to generate the thumbnail(s). You will need to increase the memory of the lambda function, which increases the CPU output proportionality.
+  
+  If there is not enough memory you may see the following CloudWatch error:
+  
+  `ERROR Unable to generate images for '{bucket-name}/test.jpg', error: Error: Stream yields empty buffer`
+  
+  Here are some good lambda memory guidelines:
+  
+  - 1.0MB (2560x1440) images requires at least 256MB of lambda memory
+  - 3.7MB (3626x4532) images requires at least 512MB of lambda memory
+  - 4.5MB (7008x4672) images requires at least 750MB of lambda memory
 
 ## Building
 
