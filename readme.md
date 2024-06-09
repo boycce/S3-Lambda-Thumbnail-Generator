@@ -35,7 +35,7 @@ An Amazon Web Services Lambda function that generates thumbnails for images uplo
 5. Click "Configuration" > "General configuration" > "Edit"
     - Set timeout to 30 sec
     - Set memory to 512MB (see [lambda memory](#lambda-memory))
-5. Click "Configuration" > "Permissions" > "Role" (MyProjectThumbnailGenerator)
+5. Click "Configuration" > "Permissions" > "Execution Role" > "Role name" Link (e.g. MyProjectThumbnailGenerator-role-*)
     - Click "Add Permissions" > "Attach Policies"
     - Search for your s3 bucket policy, e.g. MyProjectBucketsOnly
     - Hit "Attach Policies"
