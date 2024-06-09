@@ -5,8 +5,8 @@ An Amazon Web Services Lambda function that generates thumbnails for images uplo
 ## Setup S3 Bucket
 
 1. Create a S3 bucket
-1. Create an IAM user, e.g. `MyProject` (you'll be writting to this bucket via the user's API credentials)
-2. Create an IAM policy, e.g. `MyProjectBucketsOnly`, and attach the user to this policy. [See policy example below](#s3-bucket-policy-example)
+2. Create an IAM policy, e.g. `MyProjectBucketsOnly` [See policy example below](#s3-bucket-policy-example)
+1. Create an IAM user, e.g. `MyProject`. Select attach policies direclty, and select your new policy. You'll be writting to this bucket via the user's API credentials
 
 ## Setup Function
 
